@@ -1,18 +1,41 @@
-import { useState } from "react";
-import { Dict } from "./Dict";
-import { SearchForm } from "./SearchForm";
-import type { Optional } from "./types";
+import {
+	QueryClient,
+	QueryClientProvider,
+	useQuery,
+} from "@tanstack/react-query";
 
-export const App = () => {
-  const params = new URLSearchParams(window.location.search);
-  const initText = params.get("text") ?? "";
+const queryClient = new QueryClient();
 
-  const [text, setText] = useState<Optional<string>>(initText);
+function Example() {
+	const { isPending, error, data } = useQuery({
+		queryKey: ["repoData"],
+		queryFn: () =>
+			fetch("https://api.github.com/repos/TanStack/query").then((res) =>
+				res.json(),
+			),
+	});
 
-  return (
-    <div className="font-sans min-w-[400px] min-h-[300px] w-full h-svh bg-[#343a40] text-white overflow-hidden">
-      <SearchForm value={text} onChange={setText} />
-      <Dict text={text} />
-    </div>
-  );
-};
+	if (isPending) return "Loading...";
+
+	if (error) return `An error has occurred: ${error.message}`;
+
+	return (
+		<div>
+			<h1>{data.name}</h1>
+			<p>{data.description}</p>
+			<strong>👀 {data.subscribers_count}</strong>{" "}
+			<strong>✨ {data.stargazers_count}</strong>{" "}
+			<strong>🍴 {data.forks_count}</strong>
+		</div>
+	);
+}
+
+function App() {
+	return (
+		<QueryClientProvider client={queryClient}>
+			<Example />
+		</QueryClientProvider>
+	);
+}
+
+export default App;
